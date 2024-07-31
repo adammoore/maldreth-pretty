@@ -1,7 +1,7 @@
 // Constants
-const width = 800;
-const height = 800;
-const radius = width / 2 - 80;
+const width = 1200;  // Increased width
+const height = 1200;  // Increased height
+const radius = width / 2 - 100;  // Adjusted radius
 
 // Create SVG element
 const svg = d3.select("#lifecycle-viz")
@@ -35,7 +35,10 @@ fetch("lifecycle_data.json")
       .attr("class", "link")
       .attr("d", d3.linkRadial()
         .angle(d => d.x)
-        .radius(d => d.y));
+        .radius(d => d.y))
+      .style("fill", "none")
+      .style("stroke", "#ccc")
+      .style("stroke-width", 2);
 
     // Create nodes
     const node = g.selectAll(".node")
@@ -53,11 +56,12 @@ fetch("lifecycle_data.json")
 
     node.append("text")
       .attr("dy", "0.31em")
-      .attr("x", d => d.x < Math.PI ? 6 : -6)
+      .attr("x", d => d.x < Math.PI ? 10 : -10)
       .attr("text-anchor", d => d.x < Math.PI ? "start" : "end")
       .attr("transform", d => d.x >= Math.PI ? "rotate(180)" : null)
       .text(d => d.data.name)
-      .style("font-size", "12px");
+      .style("font-size", "12px")
+      .style("fill", "#333");
 
     node.append("title")
       .text(d => d.data.name + (d.data.description ? `: ${d.data.description}` : ''));

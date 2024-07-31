@@ -1,356 +1,109 @@
 // Constants for the SVG dimensions and layout
-const width = 1200;
-const height = 1200;
-const radius = width / 2 - 120;
-
-// Maximum width for rectangles and text
-const maxRectWidth = 150;
-// Height of each line of text
-const lineHeight = 15;
-
-// Initialize counter for unique node IDs
-let i = 0;
+const width = 800;
+const height = 600;
+const nodeRadius = 50;
 
 // Create the main SVG element
 const svg = d3.select("#lifecycle-viz")
     .attr("width", width)
-    .attr("height", height)
-    .append("g")
+    .attr("height", height);
+
+// Create a group for the visualization
+const g = svg.append("g")
     .attr("transform", `translate(${width / 2}, ${height / 2})`);
 
 // Create a zoom behavior
 const zoom = d3.zoom()
-    .scaleExtent([0.5, 5])
+    .scaleExtent([0.5, 3])
     .on("zoom", (event) => {
-        svg.attr("transform", event.transform);
+        g.attr("transform", event.transform);
     });
 
 // Apply zoom behavior to the SVG
-d3.select("#lifecycle-viz").call(zoom);
+svg.call(zoom);
 
-// Color scale for different depths
+// Color scale for different stages
 const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
-
-// Font size scale based on text length
-const fontSizeScale = d3.scaleLinear()
-    .domain([0, 30])
-    .range([10, 6]);
 
 // Load and process data
 d3.json("lifecycle_data.json").then(data => {
-    const root = d3.hierarchy(transformData(data))
-        .sort((a, b) => d3.ascending(a.data.name, b.data.name));
+    const stages = Object.keys(data);
+    const numStages = stages.length;
+    const angleStep = (2 * Math.PI) / numStages;
 
-    const tree = d3.tree()
-        .size([2 * Math.PI, radius])
-        .separation((a, b) => (a.parent == b.parent ? 1 : 2) / a.depth);
-
-    // Initial tree layout
-    tree(root);
+    // Calculate positions for each stage
+    const nodePositions = stages.map((stage, i) => {
+        const angle = i * angleStep - Math.PI / 2; // Start from the top
+        return {
+            name: stage,
+            x: Math.cos(angle) * (height / 3),
+            y: Math.sin(angle) * (height / 3)
+        };
+    });
 
     // Create links
-    const link = svg.append("g")
-        .attr("fill", "none")
-        .attr("stroke", "#999")
-        .attr("stroke-opacity", 0.4)
-        .attr("stroke-width", 1.5)
-        .selectAll("path")
-        .data(root.links())
-        .join("path")
+    const links = nodePositions.map((node, i) => {
+        const nextIndex = (i + 1) % numStages;
+        return {
+            source: node,
+            target: nodePositions[nextIndex]
+        };
+    });
+
+    // Draw links
+    g.selectAll(".link")
+        .data(links)
+        .enter().append("path")
         .attr("class", "link")
-        .attr("d", d3.linkRadial()
-            .angle(d => d.x)
-            .radius(d => d.y));
+        .attr("d", d => `M${d.source.x},${d.source.y}L${d.target.x},${d.target.y}`)
+        .attr("stroke", "#999")
+        .attr("stroke-width", 2);
 
-    // Create nodes
-    const node = svg.append("g")
-        .selectAll(".node")
-        .data(root.descendants())
-        .join("g")
+    // Draw nodes
+    const nodes = g.selectAll(".node")
+        .data(nodePositions)
+        .enter().append("g")
         .attr("class", "node")
-        .attr("transform", d => `rotate(${d.x * 180 / Math.PI - 90}) translate(${d.y},0)`)
-        .on("click", (event, d) => {
-            if (d.children) {
-                d._children = d.children;
-                d.children = null;
-            } else {
-                d.children = d._children;
-                d._children = null;
-            }
-            update(d);
-        });
+        .attr("transform", d => `translate(${d.x},${d.y})`)
+        .on("click", (event, d) => updateInfoTable(data[d.name]));
 
-    // Add rectangles to nodes
-    node.append("rect")
-        .attr("width", d => Math.min(maxRectWidth, d.data.name.length * 6 + 10))
-        .attr("height", 20)
-        .attr("x", d => d.x < Math.PI ? 0 : -Math.min(maxRectWidth, d.data.name.length * 6 + 10))
-        .attr("y", -10)
-        .attr("fill", d => colorScale(d.depth))
-        .attr("opacity", 0.8);
+    nodes.append("circle")
+        .attr("r", nodeRadius)
+        .attr("fill", (d, i) => colorScale(i));
 
-    // Add text to nodes
-    node.append("text")
-        .attr("dy", "0.31em")
-        .attr("x", d => d.x < Math.PI ? 5 : -5)
-        .attr("text-anchor", d => d.x < Math.PI ? "start" : "end")
-        .style("font-size", d => `${fontSizeScale(d.data.name.length)}px`)
-        .each(function(d) {
-            const text = d3.select(this);
-            const words = d.data.name.split(/\s+/);
-            let line = "";
-            let lineNumber = 0;
-            words.forEach((word, i) => {
-                const testLine = line + word + " ";
-                if (testLine.length * 6 > maxRectWidth && i > 0) {
-                    text.append("tspan")
-                        .attr("x", d.x < Math.PI ? 5 : -5)
-                        .attr("dy", lineNumber * lineHeight)
-                        .text(line);
-                    line = word + " ";
-                    lineNumber++;
-                } else {
-                    line = testLine;
-                }
-            });
-            text.append("tspan")
-                .attr("x", d.x < Math.PI ? 5 : -5)
-                .attr("dy", lineNumber * lineHeight)
-                .text(line);
-        });
-
-    // Update rectangle height based on text content
-    node.select("rect")
-        .attr("height", function(d) {
-            const textElement = d3.select(this.parentNode).select("text");
-            const tspans = textElement.selectAll("tspan");
-            return (tspans.size() || 1) * lineHeight + 10;
-        })
-        .attr("y", function(d) {
-            const textElement = d3.select(this.parentNode).select("text");
-            const tspans = textElement.selectAll("tspan");
-            return -((tspans.size() || 1) * lineHeight) / 2 - 5;
-        });
+    nodes.append("text")
+        .attr("text-anchor", "middle")
+        .attr("dy", "0.3em")
+        .text(d => d.name)
+        .attr("fill", "white");
 
     // Add tooltips
-    node.append("title")
-        .text(d => {
-            const info = [d.data.name];
-            if (d.data.description) info.push(`Description: ${d.data.description}`);
-            if (d.data.tools) info.push(`Tools: ${d.data.tools.join(', ')}`);
-            return info.join('\n');
-        });
+    nodes.append("title")
+        .text(d => data[d.name].description);
 
-    // Collapse all nodes beyond the second level
-    root.children.forEach(d => {
-        d.children.forEach(collapse);
-    });
+    // Function to update the information table
+    function updateInfoTable(stageData) {
+        const table = d3.select("#info-table");
+        table.html(""); // Clear existing content
 
-    // Initial update
-    update(root);
+        // Add stage information
+        const stageRow = table.append("tr");
+        stageRow.append("th").text("Stage");
+        stageRow.append("td").text(stageData.description);
 
-    // Function to update the visualization
-    function update(source) {
-        const duration = 750;
+        // Add substage information
+        stageData.substages.forEach(substage => {
+            const substageRow = table.append("tr");
+            substageRow.append("th").text(substage.substage);
+            substageRow.append("td").text(substage.description);
 
-        // Compute the new tree layout
-        tree(root);
-
-        const nodes = root.descendants();
-        const links = root.links();
-
-        // Update the nodes
-        const node = svg.selectAll(".node")
-            .data(nodes, d => d.id || (d.id = ++i));
-
-        // Enter any new nodes at the parent's previous position
-        const nodeEnter = node.enter().append("g")
-            .attr("class", "node")
-            .attr("transform", d => `rotate(${source.x0 * 180 / Math.PI - 90}) translate(${source.y0},0)`)
-            .on("click", (event, d) => {
-                if (d.children) {
-                    d._children = d.children;
-                    d.children = null;
-                } else {
-                    d.children = d._children;
-                    d._children = null;
-                }
-                update(d);
-            });
-
-        // Add rectangles to new nodes
-        nodeEnter.append("rect")
-            .attr("width", d => Math.min(maxRectWidth, d.data.name.length * 6 + 10))
-            .attr("height", 20)
-            .attr("x", d => d.x < Math.PI ? 0 : -Math.min(maxRectWidth, d.data.name.length * 6 + 10))
-            .attr("y", -10)
-            .attr("fill", d => colorScale(d.depth))
-            .attr("opacity", 0.8);
-
-        // Add text to new nodes
-        nodeEnter.append("text")
-            .attr("dy", "0.31em")
-            .attr("x", d => d.x < Math.PI ? 5 : -5)
-            .attr("text-anchor", d => d.x < Math.PI ? "start" : "end")
-            .style("font-size", d => `${fontSizeScale(d.data.name.length)}px`)
-            .each(function(d) {
-                const text = d3.select(this);
-                const words = d.data.name.split(/\s+/);
-                let line = "";
-                let lineNumber = 0;
-                words.forEach((word, i) => {
-                    const testLine = line + word + " ";
-                    if (testLine.length * 6 > maxRectWidth && i > 0) {
-                        text.append("tspan")
-                            .attr("x", d.x < Math.PI ? 5 : -5)
-                            .attr("dy", lineNumber * lineHeight)
-                            .text(line);
-                        line = word + " ";
-                        lineNumber++;
-                    } else {
-                        line = testLine;
-                    }
-                });
-                text.append("tspan")
-                    .attr("x", d.x < Math.PI ? 5 : -5)
-                    .attr("dy", lineNumber * lineHeight)
-                    .text(line);
-            });
-
-        // Add tooltips to new nodes
-        nodeEnter.append("title")
-            .text(d => {
-                const info = [d.data.name];
-                if (d.data.description) info.push(`Description: ${d.data.description}`);
-                if (d.data.tools) info.push(`Tools: ${d.data.tools.join(', ')}`);
-                return info.join('\n');
-            });
-
-        // Transition nodes to their new position
-        const nodeUpdate = node.merge(nodeEnter).transition().duration(duration)
-            .attr("transform", d => `rotate(${d.x * 180 / Math.PI - 90}) translate(${d.y},0)`);
-
-        nodeUpdate.select("rect")
-            .attr("width", d => Math.min(maxRectWidth, d.data.name.length * 6 + 10))
-            .attr("x", d => d.x < Math.PI ? 0 : -Math.min(maxRectWidth, d.data.name.length * 6 + 10))
-            .attr("height", function(d) {
-                const textElement = d3.select(this.parentNode).select("text");
-                const tspans = textElement.selectAll("tspan");
-                return (tspans.size() || 1) * lineHeight + 10;
-            })
-            .attr("y", function(d) {
-                const textElement = d3.select(this.parentNode).select("text");
-                const tspans = textElement.selectAll("tspan");
-                return -((tspans.size() || 1) * lineHeight) / 2 - 5;
-            });
-
-        nodeUpdate.select("text")
-            .attr("x", d => d.x < Math.PI ? 5 : -5)
-            .attr("text-anchor", d => d.x < Math.PI ? "start" : "end");
-
-        // Transition exiting nodes to the parent's new position
-        const nodeExit = node.exit().transition().duration(duration).remove()
-            .attr("transform", d => `rotate(${source.x * 180 / Math.PI - 90}) translate(${source.y},0)`);
-
-        // Update the links
-        const link = svg.selectAll(".link")
-            .data(links, d => d.target.id);
-
-        // Enter any new links at the parent's previous position
-        const linkEnter = link.enter().append("path")
-            .attr("class", "link")
-            .attr("d", d3.linkRadial()
-                .angle(d => source.x0)
-                .radius(d => source.y0));
-
-        // Transition links to their new position
-        link.merge(linkEnter).transition().duration(duration)
-            .attr("d", d3.linkRadial()
-                .angle(d => d.x)
-                .radius(d => d.y));
-
-        // Transition exiting nodes to the parent's new position
-        link.exit().transition().duration(duration).remove()
-            .attr("d", d3.linkRadial()
-                .angle(d => source.x)
-                .radius(d => source.y));
-
-        // Stash the old positions for transition
-        nodes.forEach(d => {
-            d.x0 = d.x;
-            d.y0 = d.y;
+            // Add tools
+            const toolsRow = table.append("tr");
+            toolsRow.append("th").text("Tools");
+            toolsRow.append("td").text(substage.tools.join(", "));
         });
     }
 
-    // Function to collapse a node and all its children
-    function collapse(d) {
-        if (d.children) {
-            d._children = d.children;
-            d._children.forEach(collapse);
-            d.children = null;
-        }
-    }
-
-    // Implement control functions
-    document.getElementById("reset").addEventListener("click", () => {
-        root.children.forEach(d => {
-            d.children.forEach(collapse);
-        });
-        update(root);
-        d3.select("#lifecycle-viz").transition().duration(750).call(
-            zoom.transform,
-            d3.zoomIdentity,
-            d3.zoomTransform(svg.node()).invert([width / 2, height / 2])
-        );
-    });
-
-    document.getElementById("showAllSubstages").addEventListener("click", () => {
-        root.children.forEach(d => {
-            d.children = d._children;
-            d._children = null;
-        });
-        update(root);
-    });
-
-    document.getElementById("showAll").addEventListener("click", () => {
-        root.descendants().forEach(d => {
-            d.children = d._children;
-            d._children = null;
-        });
-        update(root);
-    });
-
-    document.getElementById("zoomIn").addEventListener("click", () => {
-        d3.select("#lifecycle-viz").transition().duration(750).call(
-            zoom.scaleBy,
-            1.3
-        );
-    });
-
-    document.getElementById("zoomOut").addEventListener("click", () => {
-        d3.select("#lifecycle-viz").transition().duration(750).call(
-            zoom.scaleBy,
-            1 / 1.3
-        );
-    });
+    // Initialize the table with the first stage
+    updateInfoTable(data[stages[0]]);
 });
-
-// Function to transform the JSON structure to a hierarchical format
-function transformData(data) {
-    const root = { name: "Lifecycle", children: [] };
-    
-    Object.keys(data).forEach(stage => {
-        const stageNode = { name: stage, children: [] };
-        data[stage].forEach(substage => {
-            const substageNode = {
-                name: substage.substage,
-                description: substage.description,
-                tools: substage.tools,
-                children: substage.tools.filter(tool => tool).map(tool => ({ name: tool }))
-            };
-            stageNode.children.push(substageNode);
-        });
-        root.children.push(stageNode);
-    });
-    return root;
-}

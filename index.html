@@ -28,6 +28,19 @@
             padding: 5px 10px;
             cursor: pointer;
         }
+        .node rect {
+            fill: white;
+            stroke: steelblue;
+            stroke-width: 1px;
+        }
+        .node text {
+            font: 10px sans-serif;
+        }
+        .link {
+            fill: none;
+            stroke: #ccc;
+            stroke-width: 1px;
+        }
     </style>
     <script src="https://d3js.org/d3.v7.min.js"></script>
 </head>
@@ -39,11 +52,11 @@
         <svg id="lifecycle-viz"></svg>
     </div>
     <div class="controls">
-        <button onclick="resetView()">Reset</button>
-        <button onclick="showAllSubstages()">Show All Substages</button>
-        <button onclick="showAll()">Show All</button>
-        <button onclick="zoomIn()">Zoom In</button>
-        <button onclick="zoomOut()">Zoom Out</button>
+        <button id="reset">Reset</button>
+        <button id="showAllSubstages">Show All Substages</button>
+        <button id="showAll">Show All</button>
+        <button id="zoomIn">Zoom In</button>
+        <button id="zoomOut">Zoom Out</button>
     </div>
     <script src="lifecycle_visualization.js"></script>
 </body>

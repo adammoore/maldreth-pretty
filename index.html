@@ -2,8 +2,21 @@
 <html>
 <head>
   <title>Lifecycle Visualization</title>
+<style>
+    #controls {
+      margin-bottom: 20px;
+    }
+    #controls button {
+      margin-right: 10px;
+    }
+  </style>
 </head>
 <body>
+  <div id="controls">
+    <button id="reset">Reset</button>
+    <button id="show-substages">Show Substages</button>
+    <button id="show-all">Show All</button>
+  </div>
   <svg id="lifecycle-viz" width="1200" height="1200"></svg>
   <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
   <script src="lifecycle_visualization.js"></script>

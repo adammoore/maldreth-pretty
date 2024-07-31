@@ -2,30 +2,41 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MalDReTH Lifecycle Visualization</title>
     <style>
-        .controls {
-            margin-top: 20px;
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+        }
+        h1, h2 {
+            color: #333;
         }
         #lifecycle-viz-container {
             display: flex;
             justify-content: center;
+            margin-top: 20px;
         }
-        svg text {
-            font-size: 10px;
+        .controls {
+            margin-top: 20px;
+            text-align: center;
         }
-        .node circle {
+        button {
+            margin: 0 5px;
+            padding: 5px 10px;
             cursor: pointer;
         }
     </style>
-    <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
 </head>
 <body>
     <h1>MalDReTH Lifecycle Visualization</h1>
     <h2>Overview</h2>
-    <p>The RDA-OfR Mapping the Landscape of Digital Research Tools Working Group aims to categorize various digital research tools based on their functionalities and how they interoperate throughout the research data lifecycle. This initiative addresses the challenge of understanding and navigating the myriad tools available, helping researchers and stakeholders select the most appropriate tools for their needs. The project's key deliverables include creating a harmonized research data lifecycle model, categorizing different types of research tools, and developing an open access database to map these tools across the lifecycle stages.</p>
+    <p>The RDA-OfR Mapping the Landscape of Digital Research Tools Working Group aims to categorize various digital research tools based on their functionalities and how they interoperate throughout the research data lifecycle. This initiative addresses the challenge of understanding and navigating the myriad tools available, helping researchers and stakeholders select the most appropriate tools for their needs.</p>
     <div id="lifecycle-viz-container">
-        <svg id="lifecycle-viz" width="800" height="800"></svg>
+        <svg id="lifecycle-viz"></svg>
     </div>
     <div class="controls">
         <button onclick="resetView()">Reset</button>
@@ -34,209 +45,6 @@
         <button onclick="zoomIn()">Zoom In</button>
         <button onclick="zoomOut()">Zoom Out</button>
     </div>
-
-    <script>
-        const width = 800;
-        const height = 800;
-        const radius = width / 2 - 80;
-
-        const svg = d3.select("#lifecycle-viz")
-            .attr("width", width)
-            .attr("height", height)
-            .append("g")
-            .attr("transform", `translate(${width / 2}, ${height / 2})`);
-
-        d3.json("lifecycle_data.json").then(data => {
-            const hierarchy = d3.hierarchy(data)
-                .sort((a, b) => d3.ascending(a.data.stage, b.data.stage));
-
-            const tree = d3.tree().size([360, radius]);
-            const root = tree(hierarchy);
-
-            const linkGenerator = d3.linkRadial()
-                .angle(d => d.x / 180 * Math.PI)
-                .radius(d => d.y);
-
-            svg.selectAll(".link")
-                .data(root.links())
-                .enter().append("path")
-                .attr("class", "link")
-                .attr("d", linkGenerator);
-
-            const nodes = svg.selectAll(".node")
-                .data(root.descendants())
-                .enter().append("g")
-                .attr("class", "node")
-                .attr("transform", d => `rotate(${d.x - 90}) translate(${d.y}, 0)`)
-                .on("click", function(event, d) {
-                    d.children ? d._children = d.children : d.children = d._children;
-                    d._children = null;
-                    update(d);
-                });
-
-            nodes.append("circle")
-                .attr("r", 5)
-                .attr("fill", d => d.children ? "lightblue" : "lightgreen");
-
-            nodes.append("text")
-                .attr("dy", ".31em")
-                .attr("x", d => d.x < 180 ? 6 : -6)
-                .attr("text-anchor", d => d.x < 180 ? "start" : "end")
-                .attr("transform", d => d.x >= 180 ? "rotate(180)" : null)
-                .text(d => d.data.stage || d.data.substage || d.data.exemplar);
-
-            nodes.append("title")
-                .text(d => {
-                    const info = [];
-                    if (d.data.stage) info.push(`Stage: ${d.data.stage}`);
-                    if (d.data.substage) info.push(`Substage: ${d.data.substage}`);
-                    if (d.data.exemplars) info.push(`Exemplars: ${d.data.exemplars.join(', ')}`);
-                    return info.join('\n');
-                });
-
-            function update(source) {
-                const nodes = root.descendants().reverse();
-                const links = root.links();
-
-                const node = svg.selectAll(".node")
-                    .data(nodes, d => d.id || (d.id = ++i));
-
-                const nodeEnter = node.enter().append("g")
-                    .attr("class", "node")
-                    .attr("transform", d => `rotate(${source.x0 - 90}) translate(${source.y0})`)
-                    .on("click", click);
-
-                nodeEnter.append("circle")
-                    .attr("r", 5)
-                    .attr("fill", d => d._children ? "lightblue" : "lightgreen");
-
-                nodeEnter.append("text")
-                    .attr("dy", ".31em")
-                    .attr("x", d => d.x < 180 ? 6 : -6)
-                    .attr("text-anchor", d => d.x < 180 ? "start" : "end")
-                    .attr("transform", d => d.x >= 180 ? "rotate(180)" : null)
-                    .text(d => d.data.stage || d.data.substage || d.data.exemplar);
-
-                const nodeUpdate = nodeEnter.merge(node);
-                nodeUpdate.transition()
-                    .duration(500)
-                    .attr("transform", d => `rotate(${d.x - 90}) translate(${d.y})`);
-
-                nodeUpdate.select("circle")
-                    .attr("r", 5)
-                    .attr("fill", d => d._children ? "lightblue" : "lightgreen");
-
-                nodeUpdate.select("text")
-                    .style("fill-opacity", 1);
-
-                const nodeExit = node.exit().transition()
-                    .duration(500)
-                    .attr("transform", d => `rotate(${source.x - 90}) translate(${source.y})`)
-                    .remove();
-
-                nodeExit.select("circle")
-                    .attr("r", 5);
-
-                nodeExit.select("text")
-                    .style("fill-opacity", 1e-6);
-
-                const link = svg.selectAll(".link")
-                    .data(links, d => d.target.id);
-
-                link.enter().insert("path", "g")
-                    .attr("class", "link")
-                    .attr("d", d => {
-                        const o = {x: source.x0, y: source.y0};
-                        return linkGenerator({source: o, target: o});
-                    })
-                    .merge(link)
-                    .transition()
-                    .duration(500)
-                    .attr("d", linkGenerator);
-
-                link.exit().transition()
-                    .duration(500)
-                    .attr("d", d => {
-                        const o = {x: source.x, y: source.y};
-                        return linkGenerator({source: o, target: o});
-                    })
-                    .remove();
-
-                nodes.forEach(d => {
-                    d.x0 = d.x;
-                    d.y0 = d.y;
-                });
-            }
-
-            function click(event, d) {
-                if (d.children) {
-                    d._children = d.children;
-                    d.children = null;
-                } else {
-                    d.children = d._children;
-                    d._children = null;
-                }
-                update(d);
-            }
-
-            function resetView() {
-                root.children.forEach(collapse);
-                update(root);
-            }
-
-            function collapse(d) {
-                if (d.children) {
-                    d._children = d.children;
-                    d._children.forEach(collapse);
-                    d.children = null;
-                }
-            }
-
-            function showAllSubstages() {
-                root.children.forEach(show);
-                update(root);
-            }
-
-            function show(d) {
-                if (d._children) {
-                    d.children = d._children;
-                    d.children.forEach(show);
-                    d._children = null;
-                }
-            }
-
-            function showAll() {
-                root.descendants().forEach(d => {
-                    if (d._children) {
-                        d.children = d._children;
-                        d._children = null;
-                    }
-                });
-                update(root);
-            }
-
-            function zoomIn() {
-                const scale = d3.zoomTransform(svg.node()).k + 0.2;
-                svg.transition().duration(500).call(zoom.scaleTo, scale);
-            }
-
-            function zoomOut() {
-                const scale = d3.zoomTransform(svg.node()).k - 0.2;
-                svg.transition().duration(500).call(zoom.scaleTo, scale);
-            }
-
-            const zoom = d3.zoom().on("zoom", (event) => {
-                svg.attr("transform", event.transform);
-            });
-
-            svg.call(zoom);
-
-            root.x0 = root.x;
-            root.y0 = root.y;
-
-            root.children.forEach(collapse);
-            update(root);
-        });
-    </script>
+    <script src="lifecycle_visualization.js"></script>
 </body>
 </html>

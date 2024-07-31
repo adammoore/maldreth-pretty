@@ -3,6 +3,14 @@ const width = 1200;
 const height = 1200;
 const radius = width / 2 - 120;
 
+// Maximum width for rectangles and text
+const maxRectWidth = 150;
+// Height of each line of text
+const lineHeight = 15;
+
+// Initialize counter for unique node IDs
+let i = 0;
+
 // Create the main SVG element
 const svg = d3.select("#lifecycle-viz")
     .attr("width", width)
@@ -22,6 +30,11 @@ d3.select("#lifecycle-viz").call(zoom);
 
 // Color scale for different depths
 const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
+
+// Font size scale based on text length
+const fontSizeScale = d3.scaleLinear()
+    .domain([0, 30])
+    .range([10, 6]);
 
 // Load and process data
 d3.json("lifecycle_data.json").then(data => {
@@ -67,21 +80,57 @@ d3.json("lifecycle_data.json").then(data => {
             update(d);
         });
 
+    // Add rectangles to nodes
     node.append("rect")
-        .attr("width", d => d.data.name.length * 6 + 10)
+        .attr("width", d => Math.min(maxRectWidth, d.data.name.length * 6 + 10))
         .attr("height", 20)
-        .attr("x", d => d.x < Math.PI ? 0 : -d.data.name.length * 6 - 10)
+        .attr("x", d => d.x < Math.PI ? 0 : -Math.min(maxRectWidth, d.data.name.length * 6 + 10))
         .attr("y", -10)
         .attr("fill", d => colorScale(d.depth))
         .attr("opacity", 0.8);
 
+    // Add text to nodes
     node.append("text")
         .attr("dy", "0.31em")
         .attr("x", d => d.x < Math.PI ? 5 : -5)
         .attr("text-anchor", d => d.x < Math.PI ? "start" : "end")
-        .text(d => d.data.name)
-        .clone(true).lower()
-        .attr("stroke", "white");
+        .style("font-size", d => `${fontSizeScale(d.data.name.length)}px`)
+        .each(function(d) {
+            const text = d3.select(this);
+            const words = d.data.name.split(/\s+/);
+            let line = "";
+            let lineNumber = 0;
+            words.forEach((word, i) => {
+                const testLine = line + word + " ";
+                if (testLine.length * 6 > maxRectWidth && i > 0) {
+                    text.append("tspan")
+                        .attr("x", d.x < Math.PI ? 5 : -5)
+                        .attr("dy", lineNumber * lineHeight)
+                        .text(line);
+                    line = word + " ";
+                    lineNumber++;
+                } else {
+                    line = testLine;
+                }
+            });
+            text.append("tspan")
+                .attr("x", d.x < Math.PI ? 5 : -5)
+                .attr("dy", lineNumber * lineHeight)
+                .text(line);
+        });
+
+    // Update rectangle height based on text content
+    node.select("rect")
+        .attr("height", function(d) {
+            const textElement = d3.select(this.parentNode).select("text");
+            const tspans = textElement.selectAll("tspan");
+            return (tspans.size() || 1) * lineHeight + 10;
+        })
+        .attr("y", function(d) {
+            const textElement = d3.select(this.parentNode).select("text");
+            const tspans = textElement.selectAll("tspan");
+            return -((tspans.size() || 1) * lineHeight) / 2 - 5;
+        });
 
     // Add tooltips
     node.append("title")
@@ -129,27 +178,71 @@ d3.json("lifecycle_data.json").then(data => {
                 update(d);
             });
 
+        // Add rectangles to new nodes
         nodeEnter.append("rect")
-            .attr("width", d => d.data.name.length * 6 + 10)
+            .attr("width", d => Math.min(maxRectWidth, d.data.name.length * 6 + 10))
             .attr("height", 20)
-            .attr("x", d => d.x < Math.PI ? 0 : -d.data.name.length * 6 - 10)
+            .attr("x", d => d.x < Math.PI ? 0 : -Math.min(maxRectWidth, d.data.name.length * 6 + 10))
             .attr("y", -10)
             .attr("fill", d => colorScale(d.depth))
             .attr("opacity", 0.8);
 
+        // Add text to new nodes
         nodeEnter.append("text")
             .attr("dy", "0.31em")
             .attr("x", d => d.x < Math.PI ? 5 : -5)
             .attr("text-anchor", d => d.x < Math.PI ? "start" : "end")
-            .text(d => d.data.name);
+            .style("font-size", d => `${fontSizeScale(d.data.name.length)}px`)
+            .each(function(d) {
+                const text = d3.select(this);
+                const words = d.data.name.split(/\s+/);
+                let line = "";
+                let lineNumber = 0;
+                words.forEach((word, i) => {
+                    const testLine = line + word + " ";
+                    if (testLine.length * 6 > maxRectWidth && i > 0) {
+                        text.append("tspan")
+                            .attr("x", d.x < Math.PI ? 5 : -5)
+                            .attr("dy", lineNumber * lineHeight)
+                            .text(line);
+                        line = word + " ";
+                        lineNumber++;
+                    } else {
+                        line = testLine;
+                    }
+                });
+                text.append("tspan")
+                    .attr("x", d.x < Math.PI ? 5 : -5)
+                    .attr("dy", lineNumber * lineHeight)
+                    .text(line);
+            });
+
+        // Add tooltips to new nodes
+        nodeEnter.append("title")
+            .text(d => {
+                const info = [d.data.name];
+                if (d.data.description) info.push(`Description: ${d.data.description}`);
+                if (d.data.tools) info.push(`Tools: ${d.data.tools.join(', ')}`);
+                return info.join('\n');
+            });
 
         // Transition nodes to their new position
         const nodeUpdate = node.merge(nodeEnter).transition().duration(duration)
             .attr("transform", d => `rotate(${d.x * 180 / Math.PI - 90}) translate(${d.y},0)`);
 
         nodeUpdate.select("rect")
-            .attr("width", d => d.data.name.length * 6 + 10)
-            .attr("x", d => d.x < Math.PI ? 0 : -d.data.name.length * 6 - 10);
+            .attr("width", d => Math.min(maxRectWidth, d.data.name.length * 6 + 10))
+            .attr("x", d => d.x < Math.PI ? 0 : -Math.min(maxRectWidth, d.data.name.length * 6 + 10))
+            .attr("height", function(d) {
+                const textElement = d3.select(this.parentNode).select("text");
+                const tspans = textElement.selectAll("tspan");
+                return (tspans.size() || 1) * lineHeight + 10;
+            })
+            .attr("y", function(d) {
+                const textElement = d3.select(this.parentNode).select("text");
+                const tspans = textElement.selectAll("tspan");
+                return -((tspans.size() || 1) * lineHeight) / 2 - 5;
+            });
 
         nodeUpdate.select("text")
             .attr("x", d => d.x < Math.PI ? 5 : -5)

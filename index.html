@@ -1,24 +1,97 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Lifecycle Visualization</title>
-<style>
-    #controls {
-      margin-bottom: 20px;
-    }
-    #controls button {
-      margin-right: 10px;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <title>MalDReTH Lifecycle Visualization</title>
+    <style>
+        .stage, .substage, .exemplar {
+            cursor: pointer;
+            margin-left: 20px;
+        }
+        .substage, .exemplar {
+            display: none;
+        }
+        .controls {
+            margin-top: 20px;
+        }
+    </style>
 </head>
 <body>
-  <div id="controls">
-    <button id="reset">Reset</button>
-    <button id="show-substages">Show Substages</button>
-    <button id="show-all">Show All</button>
-  </div>
-  <svg id="lifecycle-viz" width="1200" height="1200"></svg>
-  <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
-  <script src="lifecycle_visualization.js"></script>
+    <h1>MalDReTH Lifecycle Visualization</h1>
+    <h2>Overview</h2>
+    <p>The RDA-OfR Mapping the Landscape of Digital Research Tools Working Group aims to categorize various digital research tools based on their functionalities and how they interoperate throughout the research data lifecycle. This initiative addresses the challenge of understanding and navigating the myriad tools available, helping researchers and stakeholders select the most appropriate tools for their needs. The project's key deliverables include creating a harmonized research data lifecycle model, categorizing different types of research tools, and developing an open access database to map these tools across the lifecycle stages.</p>
+    <div id="lifecycle">
+        <div class="stage" onclick="toggleSubstages('planning-substages')">Planning</div>
+        <div id="planning-substages" class="substage">
+            <div onclick="toggleExemplars('planning-exemplars')">Substage 1.1</div>
+            <div id="planning-exemplars" class="exemplar">Exemplar 1.1.1</div>
+            <div onclick="toggleExemplars('planning-exemplars-2')">Substage 1.2</div>
+            <div id="planning-exemplars-2" class="exemplar">Exemplar 1.2.1</div>
+        </div>
+        <div class="stage" onclick="toggleSubstages('collecting-substages')">Collecting</div>
+        <div id="collecting-substages" class="substage">
+            <div onclick="toggleExemplars('collecting-exemplars')">Substage 2.1</div>
+            <div id="collecting-exemplars" class="exemplar">Exemplar 2.1.1</div>
+        </div>
+        <div class="stage" onclick="toggleSubstages('analyzing-substages')">Analyzing</div>
+        <div id="analyzing-substages" class="substage">
+            <div onclick="toggleExemplars('analyzing-exemplars')">Substage 3.1</div>
+            <div id="analyzing-exemplars" class="exemplar">Exemplar 3.1.1</div>
+        </div>
+    </div>
+    <div class="controls">
+        <button onclick="resetView()">Reset</button>
+        <button onclick="showAllSubstages()">Show All Substages</button>
+        <button onclick="showAll()">Show All</button>
+        <button onclick="zoomIn()">Zoom In</button>
+        <button onclick="zoomOut()">Zoom Out</button>
+    </div>
+
+    <script>
+        function toggleSubstages(substageId) {
+            const substage = document.getElementById(substageId);
+            if (substage.style.display === 'block') {
+                substage.style.display = 'none';
+            } else {
+                substage.style.display = 'block';
+            }
+        }
+
+        function toggleExemplars(exemplarId) {
+            const exemplar = document.getElementById(exemplarId);
+            if (exemplar.style.display === 'block') {
+                exemplar.style.display = 'none';
+            } else {
+                exemplar.style.display = 'block';
+            }
+        }
+
+        function resetView() {
+            const substages = document.querySelectorAll('.substage');
+            const exemplars = document.querySelectorAll('.exemplar');
+            substages.forEach(substage => substage.style.display = 'none');
+            exemplars.forEach(exemplar => exemplar.style.display = 'none');
+        }
+
+        function showAllSubstages() {
+            const substages = document.querySelectorAll('.substage');
+            substages.forEach(substage => substage.style.display = 'block');
+        }
+
+        function showAll() {
+            const substages = document.querySelectorAll('.substage');
+            const exemplars = document.querySelectorAll('.exemplar');
+            substages.forEach(substage => substage.style.display = 'block');
+            exemplars.forEach(exemplar => exemplar.style.display = 'block');
+        }
+
+        function zoomIn() {
+            document.body.style.zoom = (parseFloat(document.body.style.zoom) || 1) + 0.1;
+        }
+
+        function zoomOut() {
+            document.body.style.zoom = (parseFloat(document.body.style.zoom) || 1) - 0.1;
+        }
+    </script>
 </body>
 </html>

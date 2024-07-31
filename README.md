@@ -1,63 +1,68 @@
-# Lifecycle Data Visualization with D3.js
+# MalDReTH Lifecycle Visualization
 
-This project visualizes research data lifecycle stages using D3.js.
+This project visualizes the MalDReTH (Mapping the Landscape of Digital Research Tools) research data lifecycle stages using D3.js.
+
+## Overview
+
+The RDA-OfR Mapping the Landscape of Digital Research Tools Working Group aims to categorize various digital research tools based on their functionalities and how they interoperate throughout the research data lifecycle. This visualization helps researchers and stakeholders understand and navigate the myriad tools available for different stages of the research process.
 
 ## Project Setup
 
 1. Clone the repository:
+   ```bash
+   git clone https://github.com/your-username/maldreth-pretty.git
+   cd maldreth-pretty
+   ```
 
-  ```bash
-  git clone https://github.com/adammoore/maldreth_pretty.git
-```
+2. Start a local server. You can use Python's built-in HTTP server:
+   ```bash
+   python -m http.server 8000
+   ```
 
-2. Install dependencies:
-
-  ```bash
-  pip install -r requirements.txt
-```
-
-3. Open index.html in a web browser to view the visualization.
-
+3. Open a web browser and navigate to `http://localhost:8000` to view the visualization.
 
 ## Project Structure
 
 ```
-maldreth_pretty/
-├── data.py  # Python file to handle the JSON data (optional)
-├── README.md  # Project documentation
-├── requirements.txt  # File listing project dependencies
-├── .gitignore  # File specifying files/directories to exclude from Git
-└── index.html  # HTML file for visualization
-└── lifecycle_visualization.js  # JavaScript file containing D3 code
+maldreth-pretty/
+├── index.html
+├── lifecycle_visualization.js
+├── lifecycle_data.json
+├── README.md
+└── .gitignore
 ```
 
+- `index.html`: The main HTML file that displays the visualization.
+- `lifecycle_visualization.js`: Contains the D3.js code for creating the interactive visualization.
+- `lifecycle_data.json`: The data file containing the lifecycle stages, substages, and tools.
+- `README.md`: This file, containing project documentation.
+- `.gitignore`: Specifies files and directories to be ignored by Git.
+
 ## Technologies Used
-- Python (optional) - for data manipulation using data.py
-- D3.js - for creating interactive data visualizations
-- HTML - for structuring the content and including D3
-- JavaScript - for running D3 code
 
+- D3.js (v7): For creating the interactive data visualization.
+- HTML/CSS: For structuring and styling the web page.
+- JavaScript: For implementing the visualization logic and interactivity.
 
-## Data
-The data for the visualization is defined in the lifecycle_data variable within the data.py file (optional). You can modify this data or replace it with your own data source.
+## Features
 
+- Interactive radial tree visualization of the research data lifecycle.
+- Zoom and pan functionality.
+- Expandable/collapsible nodes for exploring different levels of detail.
+- Tooltips providing additional information about each node.
+
+## Customization
+
+To modify the visualization or add new features:
+
+1. Edit the `lifecycle_data.json` file to update the data structure or content.
+2. Modify the `lifecycle_visualization.js` file to change the visualization logic or add new functionality.
+3. Update the `index.html` file to adjust the layout or add new UI elements.
 
 ## Contributing
-Feel free to fork this repository and contribute your improvements!
 
+Contributions to improve the visualization or extend its functionality are welcome. Please feel free to submit pull requests or open issues for any bugs or feature requests.
 
 ## License
-Apache 2.0 License
 
-
-**Additional Documentation (Optional):**
-
-* **`requirements.txt`:** This file lists the Python dependencies required for the project (if you're using data.py). Libraries like pandas could be listed here for data manipulation.
-* **`.gitignore`:** This file specifies files or directories to be ignored by Git version control. Common examples include virtual environment directories and temporary files.
-* **D3 Documentation:** Include a link to the official D3 documentation within the README to help users understand the library further.
-
-**Explanation:**
-
-* This structure separates the D3 code (JavaScript) from the HTML file for better organization.
-* The README provides installation instructions, an overview of technologies used, and information about data sources and contributions.
-* The `requirements.txt` and `.gitignore` files enhance project maintainability.
+This project is licensed under the MIT License. See the `LICENSE` file for details.

@@ -5,7 +5,89 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MalDReTH Lifecycle Visualization</title>
     <style>
+        body {<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MalDReTH Lifecycle Visualization</title>
+    <style>
         body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+        }
+        h1, h2 {
+            color: #333;
+        }
+        #lifecycle-viz-container {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        .controls {
+            margin-top: 20px;
+            text-align: center;
+        }
+        button {
+            margin: 0 5px;
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+        .link {
+            fill: none;
+            stroke: #999;
+            stroke-width: 1.5px;
+        }
+        .node rect {
+            fill: #fff;
+            stroke: #999;
+            stroke-width: 1.5px;
+        }
+        .node text {
+            font: 10px sans-serif;
+        }
+        #info-container {
+            margin-top: 20px;
+        }
+        #info-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        #info-table th, #info-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        #info-table th {
+            background-color: #f2f2f2;
+        }
+    </style>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+</head>
+<body>
+    <h1>MalDReTH Lifecycle Visualization</h1>
+    <h2>Overview</h2>
+    <p>The RDA-OfR Mapping the Landscape of Digital Research Tools Working Group aims to categorize various digital research tools based on their functionalities and how they interoperate throughout the research data lifecycle. This initiative addresses the challenge of understanding and navigating the myriad tools available, helping researchers and stakeholders select the most appropriate tools for their needs.</p>
+    <div id="lifecycle-viz-container">
+        <svg id="lifecycle-viz"></svg>
+    </div>
+    <div id="info-container">
+        <table id="info-table"></table>
+    </div>
+    <div class="controls">
+        <button id="reset">Reset</button>
+        <button id="showAllSubstages">Show All Substages</button>
+        <button id="showAll">Show All</button>
+        <button id="zoomIn">Zoom In</button>
+        <button id="zoomOut">Zoom Out</button>
+        <button id="toggleView">Toggle View</button>
+    </div>
+    <script src="lifecycle_visualization.js"></script>
+</body>
+</html>
+
             font-family: Arial, sans-serif;
             line-height: 1.6;
             margin: 0;

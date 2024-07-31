@@ -28,18 +28,33 @@
             padding: 5px 10px;
             cursor: pointer;
         }
-        .node rect {
-            fill: white;
+        .link {
+            fill: none;
+            stroke: #999;
+            stroke-width: 1.5px;
+        }
+        .node circle {
+            fill: #fff;
             stroke: steelblue;
-            stroke-width: 1px;
+            stroke-width: 1.5px;
         }
         .node text {
             font: 10px sans-serif;
         }
-        .link {
-            fill: none;
-            stroke: #ccc;
-            stroke-width: 1px;
+        #info-container {
+            margin-top: 20px;
+        }
+        #info-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        #info-table th, #info-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        #info-table th {
+            background-color: #f2f2f2;
         }
     </style>
     <script src="https://d3js.org/d3.v7.min.js"></script>
@@ -50,6 +65,9 @@
     <p>The RDA-OfR Mapping the Landscape of Digital Research Tools Working Group aims to categorize various digital research tools based on their functionalities and how they interoperate throughout the research data lifecycle. This initiative addresses the challenge of understanding and navigating the myriad tools available, helping researchers and stakeholders select the most appropriate tools for their needs.</p>
     <div id="lifecycle-viz-container">
         <svg id="lifecycle-viz"></svg>
+    </div>
+    <div id="info-container">
+        <table id="info-table"></table>
     </div>
     <div class="controls">
         <button id="reset">Reset</button>

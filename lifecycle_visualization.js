@@ -44,30 +44,41 @@ d3.json("lifecycle_data.json").then(data => {
         .selectAll("path")
         .data(root.links())
         .join("path")
+        .attr("class", "link")
         .attr("d", d3.linkRadial()
             .angle(d => d.x)
             .radius(d => d.y));
 
     // Create nodes
     const node = svg.append("g")
-        .selectAll("g")
+        .selectAll(".node")
         .data(root.descendants())
         .join("g")
+        .attr("class", "node")
         .attr("transform", d => `rotate(${d.x * 180 / Math.PI - 90}) translate(${d.y},0)`)
         .on("click", (event, d) => {
-            d.children = d.children ? null : d._children;
-            update(root);
+            if (d.children) {
+                d._children = d.children;
+                d.children = null;
+            } else {
+                d.children = d._children;
+                d._children = null;
+            }
+            update(d);
         });
 
-    node.append("circle")
-        .attr("fill", d => d._children ? "#999" : colorScale(d.depth))
-        .attr("r", 5);
+    node.append("rect")
+        .attr("width", d => d.data.name.length * 6 + 10)
+        .attr("height", 20)
+        .attr("x", d => d.x < Math.PI ? 0 : -d.data.name.length * 6 - 10)
+        .attr("y", -10)
+        .attr("fill", d => colorScale(d.depth))
+        .attr("opacity", 0.8);
 
     node.append("text")
         .attr("dy", "0.31em")
-        .attr("x", d => d.x < Math.PI === !d.children ? 6 : -6)
-        .attr("text-anchor", d => d.x < Math.PI === !d.children ? "start" : "end")
-        .attr("transform", d => d.x >= Math.PI ? "rotate(180)" : null)
+        .attr("x", d => d.x < Math.PI ? 5 : -5)
+        .attr("text-anchor", d => d.x < Math.PI ? "start" : "end")
         .text(d => d.data.name)
         .clone(true).lower()
         .attr("stroke", "white");
@@ -100,57 +111,61 @@ d3.json("lifecycle_data.json").then(data => {
         const links = root.links();
 
         // Update the nodes
-        const node = svg.selectAll("g")
+        const node = svg.selectAll(".node")
             .data(nodes, d => d.id || (d.id = ++i));
 
         // Enter any new nodes at the parent's previous position
         const nodeEnter = node.enter().append("g")
+            .attr("class", "node")
             .attr("transform", d => `rotate(${source.x0 * 180 / Math.PI - 90}) translate(${source.y0},0)`)
             .on("click", (event, d) => {
-                d.children = d.children ? null : d._children;
+                if (d.children) {
+                    d._children = d.children;
+                    d.children = null;
+                } else {
+                    d.children = d._children;
+                    d._children = null;
+                }
                 update(d);
             });
 
-        nodeEnter.append("circle")
-            .attr("r", 1e-6)
-            .attr("fill", d => d._children ? "#999" : colorScale(d.depth));
+        nodeEnter.append("rect")
+            .attr("width", d => d.data.name.length * 6 + 10)
+            .attr("height", 20)
+            .attr("x", d => d.x < Math.PI ? 0 : -d.data.name.length * 6 - 10)
+            .attr("y", -10)
+            .attr("fill", d => colorScale(d.depth))
+            .attr("opacity", 0.8);
 
         nodeEnter.append("text")
             .attr("dy", "0.31em")
-            .attr("x", d => d.x < Math.PI === !d.children ? 6 : -6)
-            .attr("text-anchor", d => d.x < Math.PI === !d.children ? "start" : "end")
-            .text(d => d.data.name)
-            .attr("fill-opacity", 1e-6);
+            .attr("x", d => d.x < Math.PI ? 5 : -5)
+            .attr("text-anchor", d => d.x < Math.PI ? "start" : "end")
+            .text(d => d.data.name);
 
         // Transition nodes to their new position
         const nodeUpdate = node.merge(nodeEnter).transition().duration(duration)
             .attr("transform", d => `rotate(${d.x * 180 / Math.PI - 90}) translate(${d.y},0)`);
 
-        nodeUpdate.select("circle")
-            .attr("r", 5)
-            .attr("fill", d => d._children ? "#999" : colorScale(d.depth));
+        nodeUpdate.select("rect")
+            .attr("width", d => d.data.name.length * 6 + 10)
+            .attr("x", d => d.x < Math.PI ? 0 : -d.data.name.length * 6 - 10);
 
         nodeUpdate.select("text")
-            .attr("fill-opacity", 1)
-            .attr("transform", d => d.x >= Math.PI ? "rotate(180)" : null);
+            .attr("x", d => d.x < Math.PI ? 5 : -5)
+            .attr("text-anchor", d => d.x < Math.PI ? "start" : "end");
 
         // Transition exiting nodes to the parent's new position
         const nodeExit = node.exit().transition().duration(duration).remove()
-            .attr("transform", d => `rotate(${source.x * 180 / Math.PI - 90}) translate(${source.y},0)`)
-            .attr("fill-opacity", 1e-6);
-
-        nodeExit.select("circle")
-            .attr("r", 1e-6);
-
-        nodeExit.select("text")
-            .attr("fill-opacity", 1e-6);
+            .attr("transform", d => `rotate(${source.x * 180 / Math.PI - 90}) translate(${source.y},0)`);
 
         // Update the links
-        const link = svg.selectAll("path")
+        const link = svg.selectAll(".link")
             .data(links, d => d.target.id);
 
         // Enter any new links at the parent's previous position
         const linkEnter = link.enter().append("path")
+            .attr("class", "link")
             .attr("d", d3.linkRadial()
                 .angle(d => source.x0)
                 .radius(d => source.y0));
@@ -184,7 +199,7 @@ d3.json("lifecycle_data.json").then(data => {
     }
 
     // Implement control functions
-    window.resetView = function() {
+    document.getElementById("reset").addEventListener("click", () => {
         root.children.forEach(d => {
             d.children.forEach(collapse);
         });
@@ -194,37 +209,37 @@ d3.json("lifecycle_data.json").then(data => {
             d3.zoomIdentity,
             d3.zoomTransform(svg.node()).invert([width / 2, height / 2])
         );
-    };
+    });
 
-    window.showAllSubstages = function() {
+    document.getElementById("showAllSubstages").addEventListener("click", () => {
         root.children.forEach(d => {
             d.children = d._children;
             d._children = null;
         });
         update(root);
-    };
+    });
 
-    window.showAll = function() {
+    document.getElementById("showAll").addEventListener("click", () => {
         root.descendants().forEach(d => {
             d.children = d._children;
             d._children = null;
         });
         update(root);
-    };
+    });
 
-    window.zoomIn = function() {
+    document.getElementById("zoomIn").addEventListener("click", () => {
         d3.select("#lifecycle-viz").transition().duration(750).call(
             zoom.scaleBy,
             1.3
         );
-    };
+    });
 
-    window.zoomOut = function() {
+    document.getElementById("zoomOut").addEventListener("click", () => {
         d3.select("#lifecycle-viz").transition().duration(750).call(
             zoom.scaleBy,
             1 / 1.3
         );
-    };
+    });
 });
 
 // Function to transform the JSON structure to a hierarchical format

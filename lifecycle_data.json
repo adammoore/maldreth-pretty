@@ -109,9 +109,7 @@
       "substage": "Metadata Tool",
       "description": "Tools that enable creation, application, and management of metadata, and embedding of metadata in other kinds of tools",
       "tools": [
-        "CEDAR Workbench (biomedical data)",
-        "",
-        ""
+        "CEDAR Workbench (biomedical data)"
       ]
     }
   ],
@@ -120,9 +118,7 @@
       "substage": "Remediation (e.g. motion capture for gait analysis)",
       "description": "Tools that capture transformation of data observations",
       "tools": [
-        "Track3D",
-        "",
-        ""
+        "Track3D"
       ]
     },
     {
@@ -130,8 +126,7 @@
       "description": "Tools that provide computational methods for analysis",
       "tools": [
         "SPSS",
-        "Matlab",
-        ""
+        "Matlab"
       ]
     },
     {
@@ -158,9 +153,7 @@
       "substage": "Archive",
       "description": "Tools that facilitate the long-term storage of data",
       "tools": [
-        "Libsafe",
-        "",
-        ""
+        "Libsafe"
       ]
     },
     {
@@ -198,8 +191,7 @@
       "description": "Tools that enable the storage and public sharing of metadata",
       "tools": [
         "DataCite Commons",
-        "IBM Infosphere",
-        ""
+        "IBM Infosphere"
       ]
     }
   ],
@@ -217,9 +209,7 @@
       "substage": "Archive",
       "description": "Tools that facilitate the long-term preservation of data",
       "tools": [
-        "Archivematica",
-        "",
-        ""
+        "Archivematica"
       ]
     },
     {

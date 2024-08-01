@@ -192,14 +192,14 @@ d3.json("lifecycle_data.json").then(data => {
     // Function to toggle substages visibility
     function toggleSubstages(d, event) {
         const substages = data[d.name].substages;
-        const existingSubstages = g.selectAll(`.substage-${d.name}`);
+        const existingSubstages = g.selectAll(`.substage-${d.name.replace(/\s+/g, '-')}`);
 
         if (existingSubstages.empty()) {
             // Show substages
-            const substageNodes = g.selectAll(`.substage-${d.name}`)
+            const substageNodes = g.selectAll(`.substage-${d.name.replace(/\s+/g, '-')}`)
                 .data(substages)
                 .enter().append("g")
-                .attr("class", `substage-${d.name}`)
+                .attr("class", `substage-${d.name.replace(/\s+/g, '-')}`)
                 .attr("transform", (_, i) => {
                     let angle, x, y;
                     if (isCircular) {
@@ -235,10 +235,25 @@ d3.json("lifecycle_data.json").then(data => {
             // Add tooltips for substages
             substageNodes.append("title")
                 .text(s => s.description);
+
+            // Draw connections between main stage and substages
+            if (isCircular) {
+                substageNodes.each(function(s, i) {
+                    const substageNode = d3.select(this);
+                    const [x, y] = substageNode.attr("transform").match(/translate\(([^)]+)\)/)[1].split(',').map(parseFloat);
+                    g.append("path")
+                        .attr("class", "substage-link")
+                        .attr("d", `M${d.x},${d.y}L${x},${y}`)
+                        .attr("stroke", "#999")
+                        .attr("stroke-width", 1)
+                        .attr("fill", "none");
+                });
+            }
         } else {
             // Hide substages and exemplars
             existingSubstages.remove();
-            g.selectAll(`.exemplar-${d.name}`).remove();
+            g.selectAll(`.exemplar-${d.name.replace(/\s+/g, '-')}`).remove();
+            g.selectAll(`.substage-link`).remove();
         }
 
         updateInfoTable(data[d.name]);
@@ -286,8 +301,24 @@ d3.json("lifecycle_data.json").then(data => {
                 .text(e => e)
                 .attr("font-size", "8px")
                 .attr("fill", "#333");
+
+            // Draw connections between substage and exemplars
+            if (isCircular) {
+                exemplarNodes.each(function(e, i) {
+                    const exemplarNode = d3.select(this);
+                    const [x, y] = exemplarNode.attr("transform").match(/translate\(([^)]+)\)/)[1].split(',').map(parseFloat);
+                    const [parentX, parentY] = parentNode.attr("transform").match(/translate\(([^)]+)\)/)[1].split(',').map(parseFloat);
+                    g.append("path")
+                        .attr("class", "exemplar-link")
+                        .attr("d", `M${parentX},${parentY}L${x},${y}`)
+                        .attr("stroke", "#999")
+                        .attr("stroke-width", 1)
+                        .attr("fill", "none");
+                });
+            }
         } else {
             existingExemplars.remove();
+            g.selectAll(`.exemplar-link`).remove();
         }
     }
 
@@ -315,7 +346,7 @@ d3.json("lifecycle_data.json").then(data => {
             substageDescRow.append("th").text("Description");
             substageDescRow.append("td").text(substage.description);
 
-            // Add tools
+// Add tools
             const toolsRow = table.append("tr");
             toolsRow.append("th").text("Tools");
             const toolsList = toolsRow.append("td").append("ul");
@@ -330,20 +361,21 @@ d3.json("lifecycle_data.json").then(data => {
 
     // Event listeners for control buttons
     d3.select("#reset").on("click", () => {
-        g.selectAll(".substage, .exemplar").remove();
+        g.selectAll(".substage, .exemplar, .substage-link, .exemplar-link").remove();
         svg.transition().duration(750).call(zoom.transform, d3.zoomIdentity);
+        updateInfoTable({name: "", description: "", substages: []});
     });
 
     d3.select("#showAllSubstages").on("click", () => {
         g.selectAll(".node").each(function(d) {
-            toggleSubstages(d);
+            toggleSubstages(d, {target: this});
         });
     });
 
     d3.select("#showAll").on("click", () => {
         g.selectAll(".node").each(function(d) {
-            toggleSubstages(d);
-            g.selectAll(`.substage-${d.name}`).each(function(s) {
+            toggleSubstages(d, {target: this});
+            g.selectAll(`.substage-${d.name.replace(/\s+/g, '-')}`).each(function(s) {
                 showExemplars(s, {target: this, stopPropagation: () => {}}, d);
             });
         });
@@ -358,12 +390,37 @@ d3.json("lifecycle_data.json").then(data => {
     });
 
     // Add toggle button for switching between circular and linear views
-    d3.select(".controls")
-        .append("button")
-        .attr("id", "toggleView")
-        .text("Toggle View")
-        .on("click", () => {
-            isCircular = !isCircular;
-            drawVisualization();
-        });
+    d3.select("#toggleView").on("click", () => {
+        isCircular = !isCircular;
+        drawVisualization();
+    });
 });
+
+// CSS styles for better separation in linear view
+const style = document.createElement('style');
+style.textContent = `
+    .node rect {
+        stroke-width: 2px;
+    }
+    .node text {
+        font-size: 12px;
+        font-weight: bold;
+    }
+    .link, .arrow {
+        stroke-width: 2px;
+    }
+    #info-table {
+        margin-top: 20px;
+        width: 100%;
+        border-collapse: collapse;
+    }
+    #info-table th, #info-table td {
+        border: 1px solid #ddd;
+        padding: 8px;
+        text-align: left;
+    }
+    #info-table th {
+        background-color: #f2f2f2;
+    }
+`;
+document.head.appendChild(style);
